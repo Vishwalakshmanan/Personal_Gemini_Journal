@@ -1,0 +1,72 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // =========================================================================
+    // PERSONAL GEMINI JOURNAL - FIRESTORE SECURITY RULES
+    // OWASP & Security-First Architecture
+    // =========================================================================
+    // 1. DEFAULT DENY: Explicitly block any catch-all access across the database.
+    // 2. USER ISOLATION: Strict per-user isolation enforcing request.auth.uid == userId.
+    // 3. ZERO PUBLIC ACCESS: Absolutely no `.allow read, write: if true;` rules.
+    // 4. DATA VALIDATION: Enforce required fields, string lengths, and schema types.
+    // =========================================================================
+
+    // Fallback Deny Rule - Nothing is open by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions for security validation
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidMessage() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['sender', 'text', 'timestamp'])
+        && (data.sender == 'user' || data.sender == 'gemini')
+        && data.text is string
+        && data.text.size() > 0
+        && data.text.size() <= 10000;
+    }
+
+    function isValidConversation() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['title', 'createdAt', 'updatedAt', 'userId'])
+        && data.userId == request.auth.uid
+        && data.title is string
+        && data.title.size() <= 200;
+    }
+
+    // Isolated User Profile & Data Scope
+    match /users/{userId} {
+      // Users can only read and write their own root user record
+      allow read, write: if isOwner(userId);
+
+      // Isolated Conversations subcollection
+      match /conversations/{conversationId} {
+        allow read, delete: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidConversation();
+        allow update: if isOwner(userId);
+
+        // Isolated Messages subcollection
+        match /messages/{messageId} {
+          allow read: if isOwner(userId);
+          allow create: if isOwner(userId) && isValidMessage();
+          allow update, delete: if isOwner(userId);
+        }
+
+        // Isolated Summaries subcollection (Auto-generated every 5 messages)
+        match /summaries/{summaryId} {
+          allow read: if isOwner(userId);
+          allow create, update: if isOwner(userId);
+          allow delete: if isOwner(userId);
+        }
+      }
+    }
+  }
+}

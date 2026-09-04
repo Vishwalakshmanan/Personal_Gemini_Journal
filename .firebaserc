@@ -1,0 +1,6 @@
+{
+  "projects": {
+    "default": "personal-gemini-journal-prod",
+    "staging": "personal-gemini-journal-staging"
+  }
+}

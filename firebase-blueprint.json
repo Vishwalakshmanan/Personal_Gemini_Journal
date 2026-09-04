@@ -1,0 +1,77 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with isolation boundary",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User unique identifier matching auth.uid" },
+        "email": { "type": "string", "format": "email", "description": "User Google email address" },
+        "displayName": { "type": "string", "description": "Display name" },
+        "photoURL": { "type": "string", "description": "Avatar URL" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Journal session containing multi-turn dialogue",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string", "description": "Owner userId" },
+        "title": { "type": "string", "description": "Summary title of the journal entry" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "messageCount": { "type": "number", "description": "Total message count in session" },
+        "latestSummary": { "type": "string", "description": "Latest auto-generated checkpoint summary" }
+      },
+      "required": ["userId", "title", "createdAt", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual turn in a journal conversation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "sender": { "type": "string", "enum": ["user", "gemini"] },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sender", "text", "timestamp"]
+    },
+    "Summary": {
+      "title": "Summary",
+      "description": "Auto-generated checkpoint summary after every 5 messages",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "conversationId": { "type": "string" },
+        "summaryText": { "type": "string" },
+        "bulletPoints": { "type": "array", "items": { "type": "string" } },
+        "messageCheckpoint": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["conversationId", "summaryText", "messageCheckpoint", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "entity": "User",
+      "description": "Isolated user profile collection"
+    },
+    "/users/{userId}/conversations/{conversationId}": {
+      "entity": "Conversation",
+      "description": "User-isolated journal conversations"
+    },
+    "/users/{userId}/conversations/{conversationId}/messages/{messageId}": {
+      "entity": "Message",
+      "description": "Individual message turns within user's conversation"
+    },
+    "/users/{userId}/conversations/{conversationId}/summaries/{summaryId}": {
+      "entity": "Summary",
+      "description": "Auto-generated summaries every 5 messages"
+    }
+  }
+}
