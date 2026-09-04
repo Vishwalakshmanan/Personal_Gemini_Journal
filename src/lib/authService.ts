@@ -79,12 +79,12 @@ export async function signInWithEmail(email: string, pass: string): Promise<Fire
     await syncUserProfile(result.user);
     return result.user;
   } catch (error: any) {
-    console.error("Email sign in error:", error);
+    console.warn("Email sign in notice:", error?.code || error);
     if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password" || error.code === "auth/invalid-credential") {
       throw new Error("Invalid email or password. Please check your credentials or create an account.");
     }
     if (error.code === "auth/operation-not-allowed") {
-      throw new Error("Email/Password provider is not yet enabled in your Firebase Console. Please use 'Continue with Google' or enable Email/Password in Firebase Console.");
+      throw new Error("OPERATION_NOT_ALLOWED: Email/Password provider is not yet enabled in Firebase Console. Please use 'Continue with Google' or enable Email/Password in Firebase Console under Authentication > Sign-in method.");
     }
     if (error.code === "auth/too-many-requests") {
       throw new Error("Access temporarily disabled due to multiple failed login attempts. Please reset password or try again later.");
@@ -107,7 +107,7 @@ export async function signUpWithEmail(email: string, pass: string, name: string)
     await syncUserProfile(result.user);
     return result.user;
   } catch (error: any) {
-    console.error("Email registration error:", error);
+    console.warn("Email registration notice:", error?.code || error);
     if (error.code === "auth/email-already-in-use") {
       throw new Error("An account already exists with this email address. Please sign in instead.");
     }
@@ -115,7 +115,7 @@ export async function signUpWithEmail(email: string, pass: string, name: string)
       throw new Error("Password is too weak. Please choose a password with at least 6 characters.");
     }
     if (error.code === "auth/operation-not-allowed") {
-      throw new Error("Email/Password provider is not yet enabled in your Firebase Console. Please use 'Continue with Google' or enable Email/Password in Firebase Console.");
+      throw new Error("OPERATION_NOT_ALLOWED: Email/Password registration is not enabled in Firebase Console. Please use 'Continue with Google' or enable Email/Password in the Firebase Console under Authentication > Sign-in method.");
     }
     throw new Error(error.message || "Failed to create an account.");
   }
